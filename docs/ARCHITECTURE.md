@@ -48,7 +48,7 @@ The Markdown patch temporarily replaces the component's internal text only durin
 The natural display scale is:
 
 ```text
-basePixelsPerEx = terminalCellHeightPx × 0.50
+basePixelsPerEx = terminalCellHeightPx × 0.60
 ```
 
 Formula complexity does not influence this value. Superscripts, limits, and other TeX style levels may be smaller because MathJax defines them relative to the same base style.
@@ -80,7 +80,7 @@ The same value is applied on both axes. Formulas are never independently stretch
 
 The SVG is centered in an integer-cell canvas with transparent safety bleed on every side. After rendering, the raw premultiplied RGBA buffer is scanned for exact half-open ink bounds. A raster is rejected if visible alpha reaches any canvas edge, preventing clipped roots, fraction bars, boxes, accents, or long stroke miters.
 
-Small canvases use 2× device density. If 2× would exceed 4096 pixels but the logical cell canvas still fits, the renderer selects 1× rather than rejecting the formula. Display dimensions remain unchanged.
+Small canvases use 3× device density. The renderer selects the largest scale among 3×, 2×, and 1× that fits within 4096 pixels per dimension. Display dimensions remain unchanged by device density.
 
 ### Capability-first fallback
 

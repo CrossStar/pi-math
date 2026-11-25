@@ -75,11 +75,9 @@ function renderInlinePlacement(placement: FormulaImagePlacement): string | undef
     if (virtual) return `${virtual.sequence}${virtual.placeholders[0]}`;
   }
 
-  // Compatibility path for Kitty-protocol terminals without Unicode placeholders.
-  const rendered = renderNativeImage(placement);
-  if (!rendered || rendered.rows !== 1) return undefined;
-  const columns = placement.raster.columns;
-  return `${" ".repeat(columns)}\x1b[${columns}D${rendered.sequence}\x1b[${columns}C`;
+  // Cursor-motion inline images are not understood by every Pi width parser.
+  // Preserve the source rather than emitting a line that can corrupt TUI layout.
+  return undefined;
 }
 
 /** Replace generated Markdown markers with terminal-native image placements. */

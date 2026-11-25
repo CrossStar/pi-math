@@ -101,6 +101,8 @@ export function renderKittyVirtualImage(
   rows: number,
 ): KittyVirtualImage | undefined {
   if (
+    !Number.isInteger(columns) ||
+    !Number.isInteger(rows) ||
     columns < 1 ||
     rows < 1 ||
     columns > MAX_KITTY_PLACEHOLDER_DIMENSION ||

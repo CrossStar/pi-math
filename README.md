@@ -83,7 +83,7 @@ f(a)&=r.
 \]
 ```
 
-Ghostty and Kitty render embedded formulas as real one-row image cells, so prose, punctuation, and list items remain intact. Standalone and display formulas use centered image blocks. Other terminals use the safest protocol-specific behavior available; the Markdown source always remains unchanged.
+Ghostty and Kitty render embedded formulas as real one-row image cells, so prose, punctuation, and list items remain intact. Standalone and display formulas use centered image blocks. Terminals without Kitty Unicode placeholder support retain source LaTeX for embedded formulas, avoiding cursor-motion sequences that older Pi width parsers misread. The Markdown source always remains unchanged.
 
 ## Commands
 
@@ -98,7 +98,7 @@ Rendering is enabled by default.
 
 ## Sizing behavior
 
-Every formula starts at the same base scale: `0.50 × terminal cell height` pixels per MathJax `ex`.
+Every formula starts at the same base scale: `0.60 × terminal cell height` pixels per MathJax `ex`.
 
 - Formulas that fit use that scale unchanged.
 - Formulas are never enlarged to fill available space.
@@ -106,9 +106,9 @@ Every formula starts at the same base scale: `0.50 × terminal cell height` pixe
 - Width and height always use the same scale, preserving the complete formula's aspect ratio.
 - The raster is padded, not stretched, to an exact integer number of terminal cells.
 - Embedded inline formulas are proportionally contained in one terminal row so they can share a line with text.
-- Small rasters use 2× device density; exceptionally large terminal canvases fall back to 1× instead of failing.
+- Small rasters use 3× device density for sharper glyphs; large terminal canvases fall back to 2× or 1× within the 4096-pixel limit.
 
-Resizing the terminal creates a layout-specific render. A formula returns to the base scale whenever the wider content area can contain it.
+Resizing the terminal creates a layout-specific render. A formula returns to the base scale whenever the wider content area can contain it. Formula slots within each Markdown component retain their image IDs across streaming updates, resizes, and cache clears, so Kitty-protocol terminals replace those images instead of accumulating a new image for every update.
 
 ## Optional configuration
 

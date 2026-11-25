@@ -55,6 +55,8 @@ function imageColumns(line: string): number {
 }
 
 test("extension injects terminal images without changing source messages", async () => {
+  const originalTermProgram = process.env.TERM_PROGRAM;
+  process.env.TERM_PROGRAM = "kitty";
   setCapabilities({ images: "kitty", trueColor: true, hyperlinks: true });
   setCellDimensions({ widthPx: 9, heightPx: 18 });
   const originalRender = Markdown.prototype.render;
@@ -142,6 +144,21 @@ Second:
 
     const command = commands.get("math-render");
     assert.ok(command);
+
+    // Streaming and resizing must replace existing terminal images, not accumulate IDs.
+    const streaming = new Markdown("Result: $x$ and $y$", 0, 0, markdownTheme);
+    const ids = (lines: string[]) => [...lines.join("\n").matchAll(/(?:,|\x1b_G)i=(\d+)/gu)].map((match) => match[1]);
+    const initialIds = ids(streaming.render(80));
+    assert.equal(initialIds.length, 2);
+    assert.notEqual(initialIds[0], initialIds[1]);
+    for (let update = 0; update < 50; update++) {
+      streaming.setText(`Result: $x$ and $y$ ${"more ".repeat(update)}`);
+      assert.deepEqual(ids(streaming.render(update % 2 ? 80 : 60)), initialIds);
+    }
+    await command!("clear", context);
+    assert.deepEqual(ids(streaming.render(80)), initialIds);
+    const separate = new Markdown("Result: $x$ and $y$", 0, 0, markdownTheme);
+    assert.ok(ids(separate.render(80)).every((id) => !initialIds.includes(id)));
     await command!("off", context);
     const disabledSource = String.raw`$\frac{1}{2}$`;
     assert.match(new Markdown(disabledSource, 0, 0, markdownTheme).render(80).join("\n"), /\\frac/u);
@@ -158,6 +175,8 @@ Second:
     const unsupported = new Markdown("$$x+1$$", 0, 0, markdownTheme).render(80).join("\n");
     assert.match(unsupported, /\$\$x\+1\$\$/u);
   } finally {
+    if (originalTermProgram === undefined) delete process.env.TERM_PROGRAM;
+    else process.env.TERM_PROGRAM = originalTermProgram;
     for (const handler of events.get("session_shutdown") ?? []) await handler({}, context);
     setCapabilities({ images: null, trueColor: false, hyperlinks: false });
   }

@@ -31,4 +31,8 @@ test("chunks large virtual image payloads and rejects unsupported dimensions", (
   assert.match(image.sequence, /,m=1;/u);
   assert.match(image.sequence, /\x1b_Gm=0,q=2;/u);
   assert.equal(renderKittyVirtualImage("AA==", 1, 298, 1), undefined);
+  for (const dimension of [NaN, Infinity, -Infinity, 1.5, 0, -1]) {
+    assert.equal(renderKittyVirtualImage("AA==", 1, dimension, 1), undefined);
+    assert.equal(renderKittyVirtualImage("AA==", 1, 1, dimension), undefined);
+  }
 });

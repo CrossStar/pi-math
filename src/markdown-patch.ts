@@ -4,6 +4,7 @@ import {
   getCapabilities,
   getCellDimensions,
 } from "@earendil-works/pi-tui";
+import { kittyPlaceholderSupport } from "./kitty-graphics.js";
 import { insertFormulaImages, type FormulaImagePlacement } from "./image-layout.js";
 import type { TerminalMathRenderer } from "./renderer.js";
 import {
@@ -75,6 +76,9 @@ export function installMarkdownMathPatch(renderer: TerminalMathRenderer): MathPa
   let enabled = true;
   let installed = true;
   let transformCache = new WeakMap<Markdown, CachedTransform>();
+  // Keep terminal image identities across streaming updates, resizes and cache clears.
+  // A new ID on every frame leaves old images in the terminal's graphics store.
+  const imageIds = new WeakMap<Markdown, number[]>();
 
   const patchedRender: MarkdownRender = function (width: number): string[] {
     const markdown = this as unknown as MarkdownInternals;
@@ -110,7 +114,7 @@ export function installMarkdownMathPatch(renderer: TerminalMathRenderer): MathPa
       placements = [];
       transformed = expandMathInMarkdown(source, (latex, display, context) => {
         const inline = !display && !context.standalone;
-        if (inline && protocol !== "kitty") return undefined;
+        if (inline && (protocol !== "kitty" || !kittyPlaceholderSupport())) return undefined;
 
         const raster = renderer.render(latex, display, color, {
           maxWidthCells: contentWidth,
@@ -121,7 +125,12 @@ export function installMarkdownMathPatch(renderer: TerminalMathRenderer): MathPa
         });
         if (!raster) return undefined;
 
-        const imageId = allocateMathImageId();
+        let ids = imageIds.get(this);
+        if (!ids) {
+          ids = [];
+          imageIds.set(this, ids);
+        }
+        const imageId = ids[placements.length] ?? (ids[placements.length] = allocateMathImageId());
         const marker = imageMarker(imageId, placements.length, raster.columns, inline);
         placements.push({
           marker,

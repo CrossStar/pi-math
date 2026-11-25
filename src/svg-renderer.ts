@@ -14,8 +14,8 @@ const MAX_RASTER_HEIGHT = 4096;
 const MAX_PNG_BYTES = 12 * 1024 * 1024;
 const MAX_SVG_CACHE_BYTES = 8 * 1024 * 1024;
 const MAX_RASTER_CACHE_BYTES = 64 * 1024 * 1024;
-const BASE_EX_TO_CELL_HEIGHT = 0.5;
-const PREFERRED_DEVICE_SCALE = 2;
+const BASE_EX_TO_CELL_HEIGHT = 0.6;
+const PREFERRED_DEVICE_SCALE = 3;
 const CONTENT_BLEED_PX = 1;
 const DEFAULT_COLOR = "#b5bd68";
 
@@ -192,13 +192,11 @@ function alphaBounds(
 }
 
 function chooseDeviceScale(logicalWidth: number, logicalHeight: number): number | undefined {
-  if (
-    logicalWidth * PREFERRED_DEVICE_SCALE <= MAX_RASTER_WIDTH &&
-    logicalHeight * PREFERRED_DEVICE_SCALE <= MAX_RASTER_HEIGHT
-  ) {
-    return PREFERRED_DEVICE_SCALE;
+  for (let scale = PREFERRED_DEVICE_SCALE; scale >= 1; scale--) {
+    if (logicalWidth * scale <= MAX_RASTER_WIDTH && logicalHeight * scale <= MAX_RASTER_HEIGHT) {
+      return scale;
+    }
   }
-  if (logicalWidth <= MAX_RASTER_WIDTH && logicalHeight <= MAX_RASTER_HEIGHT) return 1;
   return undefined;
 }
 

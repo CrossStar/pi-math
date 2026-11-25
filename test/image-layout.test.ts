@@ -69,9 +69,7 @@ test("places terminal images with reserved rows and capability fallback", () => 
       area,
     );
     assert.equal(inline.length, 1);
-    assert.match(inline[0]!, /^left {4}\x1b\[3D\x1b_G/u);
-    assert.match(inline[0]!, /c=3,r=1,i=43/u);
-    assert.match(inline[0]!, /\x1b\[3C right$/u);
+    assert.equal(inline[0], `left ${inlinePlacement.fallbackText} right`);
 
     setCapabilities({ images: "iterm2", trueColor: true, hyperlinks: true });
     const iterm = insertFormulaImages(sourceLines, [placement], area);
