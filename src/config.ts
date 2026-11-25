@@ -38,7 +38,7 @@ function systemFontsEnabled(value: string | undefined): boolean {
 
 export function loadMathScale(environment: NodeJS.ProcessEnv = process.env): number {
   const raw = environment.PI_MATH_SCALE;
-  const scale = raw?.trim() ? Number(raw) : 1;
+  const scale = raw?.trim() ? Number(raw) : 0.7;
   if (!Number.isFinite(scale) || scale < 0.25 || scale > 2) {
     throw new Error("PI_MATH_SCALE must be between 0.25 and 2");
   }

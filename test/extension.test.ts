@@ -167,11 +167,11 @@ Second:
 
     const sizeProbe = new Markdown(String.raw`$$x=\frac{-b\pm\sqrt{b^2-4ac}}{2a}$$`, 0, 0, markdownTheme);
     const fullSize = imageColumns(imageLines(sizeProbe.render(80))[0]!);
-    await command!("scale 0.7", context);
+    await command!("scale 0.5", context);
     assert.ok(imageColumns(imageLines(sizeProbe.render(80))[0]!) < fullSize);
     await command!("scale invalid", context);
     await command!("scale", context);
-    assert.ok(notifications.at(-1)?.includes("0.7×"));
+    assert.ok(notifications.at(-1)?.includes("0.5×"));
     await command!("scale reset", context);
     assert.equal(imageColumns(imageLines(sizeProbe.render(80))[0]!), fullSize);
 

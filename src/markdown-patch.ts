@@ -72,7 +72,7 @@ function allocateMathImageId(): number {
  * The source Markdown is restored before render() returns, so session history
  * and provider context always retain the original LaTeX.
  */
-export function installMarkdownMathPatch(renderer: TerminalMathRenderer, initialScale = 1): MathPatchController {
+export function installMarkdownMathPatch(renderer: TerminalMathRenderer, initialScale = 0.7): MathPatchController {
   let scale = initialScale;
   const originalRender = Markdown.prototype.render;
   let enabled = true;

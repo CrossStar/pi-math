@@ -92,7 +92,7 @@ Ghostty and Kitty render embedded formulas as real one-row image cells, so prose
 /math-render on       Enable image rendering
 /math-render off      Disable image rendering
 /math-render clear    Clear formula and Markdown transform caches
-/math-render scale 0.7  Render at 70% of the default size (range: 0.25–2)
+/math-render scale 0.7  Use the default size, 70% of the reference size (range: 0.25–2)
 /math-render scale      Show the current size multiplier
 /math-render scale reset  Restore the startup multiplier
 ```
@@ -101,7 +101,7 @@ Rendering is enabled by default.
 
 ## Sizing behavior
 
-Every formula starts at the base scale: `0.60 × terminal cell height × scale` pixels per MathJax `ex`. Use `/math-render scale 0.7` to reduce the size during a session without reducing raster density. Changes apply on the next UI render. Inline formulas still fit within one row, and wide formulas still fit the available width. Set `PI_MATH_SCALE=0.7` before launching Pi to retain your preferred default across sessions; command changes are session-local.
+Every formula starts at the base scale: `0.60 × terminal cell height × scale` pixels per MathJax `ex`. The default multiplier is **0.7**, equivalent to 70% of the previous default size. Use `/math-render scale 0.5` for smaller formulas or `/math-render scale 1` for the previous size, without reducing raster density. Changes apply on the next UI render. Inline formulas still fit within one row, and wide formulas still fit the available width. Set `PI_MATH_SCALE` before launching Pi to override the startup default; command changes are session-local.
 
 - Formulas that fit use that scale unchanged.
 - Formulas are never enlarged to fill available space.
@@ -118,7 +118,7 @@ Resizing the terminal creates a layout-specific render. A formula returns to the
 Configuration is read when the extension loads:
 
 ```text
-PI_MATH_SCALE           Default size multiplier, 0.25–2 (default: 1)
+PI_MATH_SCALE           Default size multiplier, 0.25–2 (default: 0.7)
 PI_MATH_MACROS          JSON object of MathJax configmacros definitions
 PI_MATH_ENVIRONMENTS    JSON object of MathJax custom environment definitions
 PI_MATH_FONT_FILES      Font files separated by the platform path delimiter

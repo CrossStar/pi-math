@@ -17,7 +17,7 @@ function formatBytes(bytes: number): string {
 export default async function piMathExtension(pi: ExtensionAPI): Promise<void> {
   let renderer: TerminalMathRenderer | undefined;
   let loadFailure: string | undefined;
-  let initialScale = 1;
+  let initialScale = 0.7;
   try {
     initialScale = loadMathScale();
     renderer = await createTerminalMathRenderer(loadSvgMathRendererOptions());

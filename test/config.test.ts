@@ -6,8 +6,9 @@ import test from "node:test";
 import { loadMathScale, loadSvgMathRendererOptions } from "../src/config.js";
 
 test("loads and validates the default formula scale", () => {
-  assert.equal(loadMathScale({}), 1);
-  assert.equal(loadMathScale({ PI_MATH_SCALE: "0.7" }), 0.7);
+  assert.equal(loadMathScale({}), 0.7);
+  assert.equal(loadMathScale({ PI_MATH_SCALE: " " }), 0.7);
+  assert.equal(loadMathScale({ PI_MATH_SCALE: "1" }), 1);
   for (const value of ["0", "-1", "2.1", "NaN", "Infinity", "abc"]) {
     assert.throws(() => loadMathScale({ PI_MATH_SCALE: value }), /PI_MATH_SCALE/);
   }
