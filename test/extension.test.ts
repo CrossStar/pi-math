@@ -92,6 +92,26 @@ test("extension injects terminal images without changing source messages", async
     assert.deepEqual(inline.render(80), inlineRendered);
     assert.ok(inlineRendered.every((line) => visibleWidth(line) <= 80));
 
+    const terminalEnv = Object.fromEntries(
+      ["TERM_PROGRAM", "TERM", "KITTY_WINDOW_ID", "GHOSTTY_RESOURCES_DIR"].map((key) => [key, process.env[key]]),
+    );
+    try {
+      process.env.TERM_PROGRAM = "wezterm";
+      process.env.TERM = "xterm-256color";
+      delete process.env.KITTY_WINDOW_ID;
+      delete process.env.GHOSTTY_RESOURCES_DIR;
+      const mixed = new Markdown("中文 $x^2$ and $y=2$ end.", 0, 0, markdownTheme);
+      const mixedLines = mixed.render(40);
+      assert.equal(kittyImageCount(mixedLines), 2);
+      assert.ok(mixedLines.every((line) => visibleWidth(line) <= 40));
+      assert.doesNotMatch(mixedLines.join("\n"), /\$x|\$y|\x1b\[\d+[CD]/u);
+    } finally {
+      for (const [key, value] of Object.entries(terminalEnv)) {
+        if (value === undefined) delete process.env[key];
+        else process.env[key] = value;
+      }
+    }
+
     const chineseSource = String.raw`若 \(n\) 有奇素因子 \(p\)，则保留句内公式。
 
 - \(n=4\);`;

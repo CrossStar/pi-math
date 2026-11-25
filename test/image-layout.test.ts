@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { setCapabilities, setCellDimensions } from "@earendil-works/pi-tui";
+import { setCapabilities, setCellDimensions, visibleWidth } from "@earendil-works/pi-tui";
 import { insertFormulaImages, type FormulaImagePlacement } from "../src/image-layout.js";
 
 const placement: FormulaImagePlacement = {
@@ -69,7 +69,11 @@ test("places terminal images with reserved rows and capability fallback", () => 
       area,
     );
     assert.equal(inline.length, 1);
-    assert.equal(inline[0], `left ${inlinePlacement.fallbackText} right`);
+    assert.match(inline[0]!, /^left \x1b_G/u);
+    assert.match(inline[0]!, /C=1,c=3,r=1,i=43/u);
+    assert.match(inline[0]!, /\x1b\\ {4}right$/u);
+    assert.doesNotMatch(inline[0]!, /\x1b\[\d+[CD]/u);
+    assert.equal(visibleWidth(inline[0]!), 14);
 
     setCapabilities({ images: "iterm2", trueColor: true, hyperlinks: true });
     const iterm = insertFormulaImages(sourceLines, [placement], area);

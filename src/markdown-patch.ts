@@ -4,7 +4,6 @@ import {
   getCapabilities,
   getCellDimensions,
 } from "@earendil-works/pi-tui";
-import { kittyPlaceholderSupport } from "./kitty-graphics.js";
 import { insertFormulaImages, type FormulaImagePlacement } from "./image-layout.js";
 import type { TerminalMathRenderer } from "./renderer.js";
 import {
@@ -117,7 +116,7 @@ export function installMarkdownMathPatch(renderer: TerminalMathRenderer, initial
       placements = [];
       transformed = expandMathInMarkdown(source, (latex, display, context) => {
         const inline = !display && !context.standalone;
-        if (inline && (protocol !== "kitty" || !kittyPlaceholderSupport())) return undefined;
+        if (inline && protocol !== "kitty") return undefined;
 
         const raster = renderer.render(latex, display, color, {
           scale,

@@ -75,9 +75,12 @@ function renderInlinePlacement(placement: FormulaImagePlacement): string | undef
     if (virtual) return `${virtual.sequence}${virtual.placeholders[0]}`;
   }
 
-  // Cursor-motion inline images are not understood by every Pi width parser.
-  // Preserve the source rather than emitting a line that can corrupt TUI layout.
-  return undefined;
+  // C=1 (moveCursor: false) draws at the current column without moving it.
+  // Reserve the image's cells with spaces, avoiding CSI C/D cursor sequences
+  // that older Pi width parsers can consume together with the image header.
+  const rendered = renderNativeImage(placement);
+  if (!rendered || rendered.rows !== 1) return undefined;
+  return `${rendered.sequence}${" ".repeat(placement.raster.columns)}`;
 }
 
 /** Replace generated Markdown markers with terminal-native image placements. */

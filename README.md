@@ -83,7 +83,7 @@ f(a)&=r.
 \]
 ```
 
-Ghostty and Kitty render embedded formulas as real one-row image cells, so prose, punctuation, and list items remain intact. Standalone and display formulas use centered image blocks. Terminals without Kitty Unicode placeholder support retain source LaTeX for embedded formulas, avoiding cursor-motion sequences that older Pi width parsers misread. The Markdown source always remains unchanged.
+Ghostty and Kitty render embedded formulas as real one-row image cells, so prose, punctuation, and list items remain intact. Standalone and display formulas use centered image blocks. Other Kitty-protocol terminals draw inline images without moving the cursor, then reserve their width with spaces. This avoids cursor-motion sequences that older Pi width parsers misread. Terminals without Kitty graphics retain source LaTeX for embedded formulas. The Markdown source always remains unchanged.
 
 ## Commands
 
