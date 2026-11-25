@@ -29,6 +29,7 @@ export interface SvgMathRendererOptions {
 }
 
 export interface FormulaRasterLayout {
+  scale?: number;
   maxWidthCells: number;
   maxHeightCells: number;
   cellWidthPx: number;
@@ -158,6 +159,7 @@ function paddedSvg(
 
 function normalizedLayout(layout: FormulaRasterLayout): Required<FormulaRasterLayout> {
   return {
+    scale: layout.scale ?? 1,
     maxWidthCells: Math.max(1, Math.floor(layout.maxWidthCells)),
     maxHeightCells: Math.max(1, Math.floor(layout.maxHeightCells)),
     cellWidthPx: Math.max(1, layout.cellWidthPx),
@@ -300,6 +302,7 @@ export async function createSvgMathRenderer(
     const rasterKey = [
       display ? "display" : "inline",
       color,
+      layout.scale,
       layout.maxWidthCells,
       layout.maxHeightCells,
       layout.cellWidthPx,
@@ -326,7 +329,7 @@ export async function createSvgMathRenderer(
         return rememberFailure(failure("raster-limit", "Terminal cells leave no drawable area"));
       }
 
-      const basePixelsPerEx = layout.cellHeightPx * BASE_EX_TO_CELL_HEIGHT;
+      const basePixelsPerEx = layout.cellHeightPx * BASE_EX_TO_CELL_HEIGHT * layout.scale;
       const widthPixelsPerEx = innerWidth / svg.widthEx;
       const heightPixelsPerEx = layout.fitHeight
         ? innerHeight / svg.heightEx

@@ -34,6 +34,8 @@ interface CachedTransform {
 }
 
 export interface MathPatchController {
+  getScale(): number;
+  setScale(scale: number): void;
   isEnabled(): boolean;
   setEnabled(enabled: boolean): void;
   clearTransformCache(): void;
@@ -71,7 +73,8 @@ function allocateMathImageId(): number {
  * The source Markdown is restored before render() returns, so session history
  * and provider context always retain the original LaTeX.
  */
-export function installMarkdownMathPatch(renderer: TerminalMathRenderer): MathPatchController {
+export function installMarkdownMathPatch(renderer: TerminalMathRenderer, initialScale = 1): MathPatchController {
+  let scale = initialScale;
   const originalRender = Markdown.prototype.render;
   let enabled = true;
   let installed = true;
@@ -102,7 +105,7 @@ export function installMarkdownMathPatch(renderer: TerminalMathRenderer): MathPa
     const color = formulaColor(markdown);
     const cells = getCellDimensions();
     const contentWidth = Math.max(1, width - paddingX * 2);
-    const layoutKey = `${width}:${paddingX}:${color}:${protocol}:${cells.widthPx}:${cells.heightPx}`;
+    const layoutKey = `${scale}:${width}:${paddingX}:${color}:${protocol}:${cells.widthPx}:${cells.heightPx}`;
     const maxBlockRows = Math.max(1, Math.floor(MAX_RASTER_HEIGHT_PX / cells.heightPx));
 
     let transformed: string;
@@ -117,6 +120,7 @@ export function installMarkdownMathPatch(renderer: TerminalMathRenderer): MathPa
         if (inline && (protocol !== "kitty" || !kittyPlaceholderSupport())) return undefined;
 
         const raster = renderer.render(latex, display, color, {
+          scale,
           maxWidthCells: contentWidth,
           maxHeightCells: inline ? 1 : maxBlockRows,
           cellWidthPx: cells.widthPx,
@@ -159,6 +163,14 @@ export function installMarkdownMathPatch(renderer: TerminalMathRenderer): MathPa
 
   Markdown.prototype.render = patchedRender;
   return {
+    getScale: () => scale,
+    setScale(value: number) {
+      if (!Number.isFinite(value) || value < 0.25 || value > 2) {
+        throw new Error("Scale must be between 0.25 and 2");
+      }
+      scale = value;
+      transformCache = new WeakMap();
+    },
     isEnabled: () => enabled,
     setEnabled(value: boolean) {
       enabled = value;

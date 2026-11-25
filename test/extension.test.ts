@@ -145,6 +145,16 @@ Second:
     const command = commands.get("math-render");
     assert.ok(command);
 
+    const sizeProbe = new Markdown(String.raw`$$x=\frac{-b\pm\sqrt{b^2-4ac}}{2a}$$`, 0, 0, markdownTheme);
+    const fullSize = imageColumns(imageLines(sizeProbe.render(80))[0]!);
+    await command!("scale 0.7", context);
+    assert.ok(imageColumns(imageLines(sizeProbe.render(80))[0]!) < fullSize);
+    await command!("scale invalid", context);
+    await command!("scale", context);
+    assert.ok(notifications.at(-1)?.includes("0.7×"));
+    await command!("scale reset", context);
+    assert.equal(imageColumns(imageLines(sizeProbe.render(80))[0]!), fullSize);
+
     // Streaming and resizing must replace existing terminal images, not accumulate IDs.
     const streaming = new Markdown("Result: $x$ and $y$", 0, 0, markdownTheme);
     const ids = (lines: string[]) => [...lines.join("\n").matchAll(/(?:,|\x1b_G)i=(\d+)/gu)].map((match) => match[1]);

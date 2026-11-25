@@ -92,13 +92,16 @@ Ghostty and Kitty render embedded formulas as real one-row image cells, so prose
 /math-render on       Enable image rendering
 /math-render off      Disable image rendering
 /math-render clear    Clear formula and Markdown transform caches
+/math-render scale 0.7  Render at 70% of the default size (range: 0.25–2)
+/math-render scale      Show the current size multiplier
+/math-render scale reset  Restore the startup multiplier
 ```
 
 Rendering is enabled by default.
 
 ## Sizing behavior
 
-Every formula starts at the same base scale: `0.60 × terminal cell height` pixels per MathJax `ex`.
+Every formula starts at the base scale: `0.60 × terminal cell height × scale` pixels per MathJax `ex`. Use `/math-render scale 0.7` to reduce the size during a session without reducing raster density. Changes apply on the next UI render. Inline formulas still fit within one row, and wide formulas still fit the available width. Set `PI_MATH_SCALE=0.7` before launching Pi to retain your preferred default across sessions; command changes are session-local.
 
 - Formulas that fit use that scale unchanged.
 - Formulas are never enlarged to fill available space.
@@ -115,6 +118,7 @@ Resizing the terminal creates a layout-specific render. A formula returns to the
 Configuration is read when the extension loads:
 
 ```text
+PI_MATH_SCALE           Default size multiplier, 0.25–2 (default: 1)
 PI_MATH_MACROS          JSON object of MathJax configmacros definitions
 PI_MATH_ENVIRONMENTS    JSON object of MathJax custom environment definitions
 PI_MATH_FONT_FILES      Font files separated by the platform path delimiter

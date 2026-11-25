@@ -1,6 +1,6 @@
 import type { ExtensionAPI } from "@earendil-works/pi-coding-agent";
 import { getCapabilities } from "@earendil-works/pi-tui";
-import { loadSvgMathRendererOptions } from "./config.js";
+import { loadMathScale, loadSvgMathRendererOptions } from "./config.js";
 import { installMarkdownMathPatch } from "./markdown-patch.js";
 import { createTerminalMathRenderer, type TerminalMathRenderer } from "./renderer.js";
 
@@ -17,13 +17,15 @@ function formatBytes(bytes: number): string {
 export default async function piMathExtension(pi: ExtensionAPI): Promise<void> {
   let renderer: TerminalMathRenderer | undefined;
   let loadFailure: string | undefined;
+  let initialScale = 1;
   try {
+    initialScale = loadMathScale();
     renderer = await createTerminalMathRenderer(loadSvgMathRendererOptions());
   } catch (error) {
     loadFailure = errorMessage(error);
   }
 
-  const patch = renderer ? installMarkdownMathPatch(renderer) : undefined;
+  const patch = renderer ? installMarkdownMathPatch(renderer, initialScale) : undefined;
 
   pi.on("session_start", (_event, ctx) => {
     if (loadFailure && ctx.mode === "tui") {
@@ -36,11 +38,26 @@ export default async function piMathExtension(pi: ExtensionAPI): Promise<void> {
   });
 
   pi.registerCommand("math-render", {
-    description: "Control terminal LaTeX image rendering: on, off, status, or clear",
+    description: "Control LaTeX rendering: on, off, status, clear, or scale <0.25–2>",
     handler: async (args, ctx) => {
       const action = args.trim().toLowerCase() || "status";
       if (!patch || !renderer) {
         ctx.ui.notify(`pi-math is unavailable: ${loadFailure ?? "renderer did not load"}`, "error");
+        return;
+      }
+      if (action === "scale" || action.startsWith("scale ")) {
+        const parts = action.split(/\s+/);
+        if (parts.length === 1) {
+          ctx.ui.notify(`pi-math scale: ${patch.getScale()}× (range 0.25–2)`, "info");
+          return;
+        }
+        const value = parts[1] === "reset" ? initialScale : Number(parts[1]);
+        if (parts.length !== 2 || !Number.isFinite(value) || value < 0.25 || value > 2) {
+          ctx.ui.notify("Usage: /math-render scale <0.25–2|reset>", "warning");
+          return;
+        }
+        patch.setScale(value);
+        ctx.ui.notify(`pi-math scale set to ${value}×`, "info");
         return;
       }
       if (action === "on" || action === "enable") {
@@ -64,12 +81,12 @@ export default async function piMathExtension(pi: ExtensionAPI): Promise<void> {
         const protocol = getCapabilities().images ?? "unsupported terminal";
         const lastFailure = renderer.lastFailure ? `, last failure: ${renderer.lastFailure.code}` : "";
         ctx.ui.notify(
-          `pi-math is ${status} (${protocol}, ${renderer.cacheSize} rasters, ${formatBytes(renderer.cacheBytes)}${lastFailure})`,
+          `pi-math is ${status} (${protocol}, scale ${patch.getScale()}×, ${renderer.cacheSize} rasters, ${formatBytes(renderer.cacheBytes)}${lastFailure})`,
           "info",
         );
         return;
       }
-      ctx.ui.notify("Usage: /math-render on|off|status|clear", "warning");
+      ctx.ui.notify("Usage: /math-render on|off|status|clear|scale <0.25–2|reset>", "warning");
     },
   });
 }

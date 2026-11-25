@@ -3,7 +3,15 @@ import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { delimiter, join } from "node:path";
 import test from "node:test";
-import { loadSvgMathRendererOptions } from "../src/config.js";
+import { loadMathScale, loadSvgMathRendererOptions } from "../src/config.js";
+
+test("loads and validates the default formula scale", () => {
+  assert.equal(loadMathScale({}), 1);
+  assert.equal(loadMathScale({ PI_MATH_SCALE: "0.7" }), 0.7);
+  for (const value of ["0", "-1", "2.1", "NaN", "Infinity", "abc"]) {
+    assert.throws(() => loadMathScale({ PI_MATH_SCALE: value }), /PI_MATH_SCALE/);
+  }
+});
 
 test("loads cross-platform renderer options without fixed font paths", () => {
   const directory = mkdtempSync(join(tmpdir(), "pi-math-config-"));

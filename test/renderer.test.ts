@@ -41,6 +41,18 @@ test("rasterizes LaTeX through MathJax SVG", async () => {
   assertTransparentBleed(result);
 });
 
+test("scales glyphs independently of raster density and caches each size", async () => {
+  const renderer = await createTerminalMathRenderer();
+  const normal = renderer.render("x+y", true, "#ffffff", layout);
+  const small = renderer.render("x+y", true, "#ffffff", { ...layout, scale: 0.7 });
+  assert.ok(normal);
+  assert.ok(small);
+  assert.ok(Math.abs(small.pixelsPerEx / normal.pixelsPerEx - 0.7) < 1e-10);
+  assert.equal(small.deviceScale, normal.deviceScale);
+  assert.ok(small.inkBounds.right - small.inkBounds.left < normal.inkBounds.right - normal.inkBounds.left);
+  assert.equal(renderer.render("x+y", true, "#ffffff", layout), normal);
+});
+
 test("uses one fixed font scale for every formula", async () => {
   const renderer = await createTerminalMathRenderer();
   const formulas = [

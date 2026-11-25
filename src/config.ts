@@ -36,6 +36,15 @@ function systemFontsEnabled(value: string | undefined): boolean {
   return value !== "0" && value.toLowerCase() !== "false";
 }
 
+export function loadMathScale(environment: NodeJS.ProcessEnv = process.env): number {
+  const raw = environment.PI_MATH_SCALE;
+  const scale = raw?.trim() ? Number(raw) : 1;
+  if (!Number.isFinite(scale) || scale < 0.25 || scale > 2) {
+    throw new Error("PI_MATH_SCALE must be between 0.25 and 2");
+  }
+  return scale;
+}
+
 /** Read optional, process-local renderer settings without network or subprocesses. */
 export function loadSvgMathRendererOptions(
   environment: NodeJS.ProcessEnv = process.env,
