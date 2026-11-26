@@ -5,6 +5,7 @@ import {
   getCellDimensions,
 } from "@earendil-works/pi-tui";
 import { insertFormulaImages, type FormulaImagePlacement } from "./image-layout.js";
+import { kittyPlaceholderSupport } from "./kitty-graphics.js";
 import type { TerminalMathRenderer } from "./renderer.js";
 import {
   containsPotentialMath,
@@ -30,6 +31,7 @@ interface CachedTransform {
   layoutKey: string;
   transformed: string;
   placements: FormulaImagePlacement[];
+  finalOutput?: { raw: string[]; placeholders: boolean; lines: string[] };
 }
 
 export interface MathPatchController {
@@ -77,6 +79,7 @@ export function installMarkdownMathPatch(renderer: TerminalMathRenderer, initial
   const originalRender = Markdown.prototype.render;
   let enabled = true;
   let installed = true;
+  let detectionCache = new WeakMap<Markdown, { source: string; hasMath: boolean }>();
   let transformCache = new WeakMap<Markdown, CachedTransform>();
   // Keep terminal image identities across streaming updates, resizes and cache clears.
   // A new ID on every frame leaves old images in the terminal's graphics store.
@@ -91,11 +94,17 @@ export function installMarkdownMathPatch(renderer: TerminalMathRenderer, initial
       !protocol ||
       process.env.TMUX ||
       /^(tmux|screen)/i.test(process.env.TERM ?? "") ||
-      typeof source !== "string" ||
-      !containsPotentialMath(source)
+      typeof source !== "string"
     ) {
       return originalRender.call(this, width);
     }
+
+    let detection = detectionCache.get(this);
+    if (detection?.source !== source) {
+      detection = { source, hasMath: containsPotentialMath(source) };
+      detectionCache.set(this, detection);
+    }
+    if (!detection.hasMath) return originalRender.call(this, width);
 
     const paddingX =
       typeof markdown.paddingX === "number" && Number.isFinite(markdown.paddingX)
@@ -109,7 +118,7 @@ export function installMarkdownMathPatch(renderer: TerminalMathRenderer, initial
 
     let transformed: string;
     let placements: FormulaImagePlacement[];
-    const cached = transformCache.get(this);
+    let cached = transformCache.get(this);
     if (cached?.source === source && cached.layoutKey === layoutKey) {
       ({ transformed, placements } = cached);
     } else {
@@ -144,7 +153,8 @@ export function installMarkdownMathPatch(renderer: TerminalMathRenderer, initial
         });
         return { text: marker, forceBlock: !inline, rawInline: inline };
       });
-      transformCache.set(this, { source, layoutKey, transformed, placements });
+      cached = { source, layoutKey, transformed, placements };
+      transformCache.set(this, cached);
     }
 
     if (transformed === source || placements.length === 0) {
@@ -153,8 +163,17 @@ export function installMarkdownMathPatch(renderer: TerminalMathRenderer, initial
 
     markdown.text = transformed;
     try {
-      const textLines = stripGeneratedMathFenceLines(originalRender.call(this, width));
-      return insertFormulaImages(textLines, placements, { renderWidth: width, paddingX });
+      // Always consult Pi's renderer: its array identity carries invalidation.
+      // Both the original and returned arrays follow Pi's read-only contract.
+      const raw = originalRender.call(this, width);
+      const placeholders = kittyPlaceholderSupport();
+      if (cached.finalOutput?.raw === raw && cached.finalOutput.placeholders === placeholders) {
+        return cached.finalOutput.lines;
+      }
+      const textLines = stripGeneratedMathFenceLines(raw);
+      const lines = insertFormulaImages(textLines, placements, { renderWidth: width, paddingX });
+      cached.finalOutput = { raw, placeholders, lines };
+      return lines;
     } finally {
       markdown.text = source;
     }
@@ -175,10 +194,12 @@ export function installMarkdownMathPatch(renderer: TerminalMathRenderer, initial
       enabled = value;
     },
     clearTransformCache() {
+      detectionCache = new WeakMap();
       transformCache = new WeakMap();
     },
     uninstall() {
       enabled = false;
+      detectionCache = new WeakMap();
       transformCache = new WeakMap();
       if (installed && Markdown.prototype.render === patchedRender) {
         Markdown.prototype.render = originalRender;

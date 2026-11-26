@@ -144,7 +144,7 @@ The renderer has two weighted LRU caches:
 
 This avoids repeating MathJax conversion when only color or terminal width changes. Failed conversions are negatively cached with structured failure codes.
 
-The Markdown patch uses a `WeakMap` keyed by each `Markdown` component. It stores transformed marker text and image placements for one source/layout/protocol combination, allowing redraws to reuse IDs without retaining destroyed components.
+The Markdown patch uses separate per-component `WeakMap` caches for exact-source math detection (including negative results) and transformed marker text/image placements for one source/layout/protocol combination. Each transform entry retains only the latest final output, keyed by the original Markdown renderer's raw array identity and Kitty placeholder support. The original renderer still runs on every call so invalidation, theme, and padding changes propagate. Arrays follow Pi's read-only render-output contract. Clear and uninstall reset both caches; image IDs remain stable across cache clears.
 
 `/math-render clear` clears both renderer caches and the transform cache. `session_shutdown` removes the prototype patch. Pi's differential renderer deletes Kitty images whose IDs disappear from rendered lines.
 

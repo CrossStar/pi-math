@@ -89,7 +89,28 @@ test("extension injects terminal images without changing source messages", async
     assert.match(inlineRendered.join("\n"), /Einstein wrote .*\./u);
     assert.doesNotMatch(inlineRendered.join("\n"), /E=mc|\$E/u);
     assert.equal((inline as unknown as { text: string }).text, inlineSource);
-    assert.deepEqual(inline.render(80), inlineRendered);
+    assert.equal(inline.render(80), inlineRendered);
+    inline.invalidate();
+    const invalidated = inline.render(80);
+    assert.notEqual(invalidated, inlineRendered);
+    assert.deepEqual(invalidated, inlineRendered);
+    const resized = inline.render(60);
+    assert.notEqual(resized, invalidated);
+    assert.equal(inline.render(60), resized);
+    const originalCodeStyle = markdownTheme.code;
+    markdownTheme.code = (text) => `\x1b[31m${text}\x1b[39m`;
+    inline.invalidate();
+    const themed = inline.render(60);
+    assert.notEqual(themed, resized);
+    assert.equal(inline.render(60), themed);
+    markdownTheme.code = originalCodeStyle;
+    inline.invalidate();
+    const plain = new Markdown("plain text", 0, 0, markdownTheme);
+    assert.equal(plain.render(80), plain.render(80));
+    plain.setText("plain text $x$");
+    assert.equal(kittyImageCount(plain.render(80)), 1);
+    plain.setText("plain again");
+    assert.equal(kittyImageCount(plain.render(80)), 0);
     assert.ok(inlineRendered.every((line) => visibleWidth(line) <= 80));
 
     const terminalEnv = Object.fromEntries(
@@ -100,6 +121,14 @@ test("extension injects terminal images without changing source messages", async
       process.env.TERM = "xterm-256color";
       delete process.env.KITTY_WINDOW_ID;
       delete process.env.GHOSTTY_RESOURCES_DIR;
+      const fallbackLines = inline.render(60);
+      assert.notEqual(fallbackLines, resized);
+      assert.equal(inline.render(60), fallbackLines);
+      process.env.TERM_PROGRAM = "kitty";
+      const placeholderLines = inline.render(60);
+      assert.notEqual(placeholderLines, fallbackLines);
+      assert.equal(inline.render(60), placeholderLines);
+      process.env.TERM_PROGRAM = "wezterm";
       const mixed = new Markdown("中文 $x^2$ and $y=2$ end.", 0, 0, markdownTheme);
       const mixedLines = mixed.render(40);
       assert.equal(kittyImageCount(mixedLines), 2);
@@ -185,7 +214,9 @@ Second:
       streaming.setText(`Result: $x$ and $y$ ${"more ".repeat(update)}`);
       assert.deepEqual(ids(streaming.render(update % 2 ? 80 : 60)), initialIds);
     }
+    const beforeClear = streaming.render(80);
     await command!("clear", context);
+    assert.notEqual(streaming.render(80), beforeClear);
     assert.deepEqual(ids(streaming.render(80)), initialIds);
     const separate = new Markdown("Result: $x$ and $y$", 0, 0, markdownTheme);
     assert.ok(ids(separate.render(80)).every((id) => !initialIds.includes(id)));
